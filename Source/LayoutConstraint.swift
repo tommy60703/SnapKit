@@ -44,37 +44,58 @@ public class LayoutConstraint : NSLayoutConstraint {
 }
 
 internal func ==(lhs: LayoutConstraint, rhs: LayoutConstraint) -> Bool {
-    #if os(OSX)
-    // ensure first anchor items match
-    guard let item1 = lhs.firstAnchor.item,
-          let item2 = rhs.firstAnchor.item,
-          item1 === item2 else {
-        return false
+    
+    // The 'firstAnchor/secondAnchor' API forces SnapKit to require iSO 10 or higher.
+    // Use #available to support older iOS version.
+    // https://github.com/SnapKit/SnapKit/commit/c904582015d5a8eed917d79a7f28ea2b5a8ddde3
+    
+    if #available(iOS 10.0, *) {
+        #if os(OSX)
+        // ensure first anchor items match
+        guard let item1 = lhs.firstAnchor.item,
+            let item2 = rhs.firstAnchor.item,
+            item1 === item2 else {
+                return false
+        }
+        
+        // ensure second anchor items match
+        guard ((lhs.secondAnchor?.item == nil && rhs.secondAnchor?.item == nil) ||
+            (lhs.secondAnchor?.item === rhs.secondAnchor?.item)) else {
+                return false
+        }
+        #else
+        guard lhs.firstAnchor == rhs.firstAnchor else {
+            return false
+        }
+        guard ((lhs.secondAnchor == nil && rhs.secondAnchor == nil) ||
+            (lhs.secondAnchor! == rhs.secondAnchor!)) else {
+                return false
+        }
+        #endif
+        
+        // ensure attributes, relation, priorty and multiplier match
+        guard lhs.firstAttribute == rhs.firstAttribute &&
+              lhs.secondAttribute == rhs.secondAttribute &&
+              lhs.relation == rhs.relation &&
+              lhs.priority == rhs.priority &&
+              lhs.multiplier == rhs.multiplier else {
+                return false
+        }
+        return true
+        
+    } else {
+        
+        // ensure attributes, relation, priorty and multiplier match
+        guard lhs.firstItem === rhs.firstItem &&
+              lhs.secondItem === rhs.secondItem &&
+              lhs.firstAttribute == rhs.firstAttribute &&
+              lhs.secondAttribute == rhs.secondAttribute &&
+              lhs.relation == rhs.relation &&
+              lhs.priority == rhs.priority &&
+              lhs.multiplier == rhs.multiplier else {
+                return false
+        }
+        return true
+        
     }
-
-    // ensure second anchor items match
-    guard ((lhs.secondAnchor?.item == nil && rhs.secondAnchor?.item == nil) ||
-           (lhs.secondAnchor?.item === rhs.secondAnchor?.item)) else {
-        return false
-    }
-    #else
-    guard lhs.firstAnchor == rhs.firstAnchor else {
-        return false
-    }
-    guard ((lhs.secondAnchor == nil && rhs.secondAnchor == nil) ||
-           (lhs.secondAnchor! == rhs.secondAnchor!)) else {
-        return false
-    }
-    #endif
-
-
-    // ensure attributes, relation, priorty and multiplier match
-    guard lhs.firstAttribute == rhs.firstAttribute &&
-          lhs.secondAttribute == rhs.secondAttribute &&
-          lhs.relation == rhs.relation &&
-          lhs.priority == rhs.priority &&
-          lhs.multiplier == rhs.multiplier else {
-        return false
-    }
-    return true
 }
